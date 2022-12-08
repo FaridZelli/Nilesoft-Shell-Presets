@@ -1,4 +1,3 @@
-
 //Rebuild context menu of Windows File Explorer with advanced options.
 shell 
 {
