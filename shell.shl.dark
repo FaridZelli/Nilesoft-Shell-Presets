@@ -1,1 +1,393 @@
+//Rebuild context menu of Windows File Explorer with advanced options.
+shell 
+{
+	var//variables
+	{
+		shift_pressed = @key.shift()
+		elevated = @if(shift_pressed," Elevated",null) 
+	}
 
+	default//settings
+	{
+		theme
+		{
+			name = "modern"
+			view = view.large
+			dark = auto
+
+			background
+			{
+				color = #2A2A2A // or #FFF9F9F9 or [#F9F9F9, 100]
+				opacity = 65
+
+				// auto | none = 0 | transparent = 1 | blur = 2 | acrylic = 3 | mica = 4 | tabbed = 5
+				// effect = 0
+				effect = ["acrylic", #0040aa, 25] // ["acrylic effect" [, color] [, opacity]]
+
+				gradient
+				{
+					enabled=0
+					linear=[0, 100, 0, 0]
+					//radial=[100, 100, 150, 100, 100]
+					stop=[
+						[0.0, color.accent, 0],
+						[0.5, color.accent, 20],
+						[1.0, color.accent, 0]
+					]
+				}
+			}
+
+			border
+			{
+				enabled=0
+				size=2
+				radius=2
+				color=[color.accent, 100]
+				//opacity=100
+				padding = [4, 6]
+			}
+
+			shadow
+			{
+				enabled=0
+				//color=#10000000
+				//opacity=100
+				//size=5
+				//offset=2
+			}
+
+			item
+			{
+				//text.normal=[#000,20]
+				//text.select=[auto,50]
+				back
+				{
+					//normal = 0
+					//normal-disabled = 0
+					//select = [#00ff00, 10]
+					//select-disabled = [#fff,10]
+				}
+				
+				//border=[#000, 30]
+				/*
+				padding = [left, top, right, bottom]
+				padding = [left+right, top+bottom]
+				padding = all
+				padding.left = 2
+				padding.right = 2
+				padding.top = 2
+				padding.bottom = 2
+				*/
+				/*
+				margin = [left, top, right, bottom]
+				margin = [left+right, top+bottom]
+				margin = all
+				margin.left = 2
+				margin.right = 2
+				margin.top = 2
+				margin.bottom = 2
+				*/
+				radius=1
+			}
+			
+			separator
+			{
+				//color=[#fff, 4]
+				//opacity=100
+				//size=1
+			}
+
+			layout
+			{
+				rtl=auto
+				align=auto //Overlay Popups
+			}
+			
+			//glyph=[color.invert(color.accent_light3), color.accent]
+			
+			font
+			{
+				//size=12
+				//weight=1 // value from 1 to 9
+			}
+		}	
+		// show image and check mark
+		image.align = 1
+		
+		// enable/disable static items auto image and group
+		static.auto = 1
+		// enable/disable static items auto image
+		static.auto.image = 1
+		// enable/disable static items auto group
+		static.auto.group = 1
+		
+		// enable/disable handle static items
+		static = 1
+		// enable/disable handle dynamic items
+		dynamic = 1
+		showdelay = 200
+	}
+
+	static
+	{
+		// Remove disabled items 6.1.7600
+		//item(where=this.disabled==true vis=remove)
+
+		// Show the items only when pressing the Shift key
+		//item(where=this.id==id.format vis=@key.shift())
+		item(where=!key.shift() find='format' vis=disable)
+
+		//item(where=this.id==id.open title=@this.title keys="Enter" image=@image.default)
+		item(where=this.id==id.properties title=@this.title keys="Alt+Enter" pos=bottom sep=both)
+		
+		item(find=@id.undo.title image=@icon.undo)
+		item(find=@id.redo.title image=@icon.redo)
+
+		// Move items to sub menu "More options"
+		// Move items whose title is more than 20 characters
+		item(where=this.title.len > 20 tip=this.title parent=@id.more_options.title)
+
+		// Move items by id.???
+		item(where=this.id(id.copy_as_path, id.restore_previous_versions, id.include_in_library, id.give_access_to) parent=@id.more_options.title)
+		
+		// Move items by id.???.title
+		item(find='@id.cast_to_device.title|@id.print.title' parent=@id.more_options.title)
+
+		// Move items by title
+		item(find='windows media player|create a new video|edit with photo|Windows Terminal|Open in Terminal' parent=@id.more_options.title)
+
+		item(where=this.id==id.more_options image=@icon.more_options sep=both pos=bottom)
+	}
+
+	dynamic
+	{
+		menu(type='~taskbar' title="Terminal" tip=["Hold Shift key to run " + this.title + ' as administrator', tip.warning, 0.2] sep=top image=\uE0D6) {
+			item(title='Command Prompt@elevated' tip=["ELEVATED\nhold Shift key to run elevated", tip.danger] admin=@shift_pressed image cmd='cmd.exe' args='/K TITLE Command Prompt &ver& PUSHD "@sel.dir"')
+			item(title='Windows PowerShell@elevated' admin=@shift_pressed image command='powershell.exe' arguments='-noexit -command Set-Location -Path "@sel.dir\."')
+
+			item(where=sys.ver.major >= 10 title='@appx.name("WindowsTerminal")@elevated' admin=@shift_pressed image='@package.path("WindowsTerminal")\WindowsTerminal.exe' cmd='wt.exe' arg='-d "@sel.path\."')
+		}
+
+		menu(type='file|dir|drive|namespace|back' mode=multiple title='File manage' image=\uE0F8)
+		{
+			menu(separator=after title='Copy as' image=@icon.copy_path)
+			{
+				item(where=@sel.count > 1 title='Copy (@sel.count) items selected' cmd=@sys.copy(sel(false, "\n")))
+				item(mode=single title="Full Path" tip=[sel.path, 0,0] cmd=@sys.copy(sel.path))
+				item(mode=single type='file|dir|back.dir' where=@sel.short.len!=sel.path.len title="Short Path" tip=[sel.short, 0,0] cmd=@sys.copy(sel.short))
+				item(mode=single type='file' separator=before find='.lnk' title='open file location')
+				separator
+				item(mode=single where=@sel.parent.len>3 title="Parent" tip=[sel.parent,0,0] cmd=@sys.copy(sel.parent))
+				separator
+				item(mode=single type='file|dir|back.dir' title="Name" tip=[sel.file.name,0,0] cmd=@sys.copy(sel.file.name))
+				item(mode=single type='file' where=@sel.file.len != @sel.file.title.len title="Title" tip=[sel.file.title,0,0] cmd=@sys.copy(sel.file.title))
+				item(mode=single type='file' where=@sel.file.ext.len>0 title="Extension" tip=["  " + sel.file.ext + "  ",0,0] cmd=@sys.copy(sel.file.ext))
+			}
+			separator
+			item(type='file|dir|back.dir|drive' title='Take Ownership' image=@icon.shield admin
+				cmd-line='/K takeown /f "@sel.path" @if(sel.type==1,null,"/r /d y") && icacls "@sel.path" /grant *S-1-5-32-544:F @if(sel.type==1,"/c /l","/t /c /l /q")')
+			separator
+			menu(title='Toggle Options' image=\uE1AC)
+			{
+				item(title='show/hide system files' image=\uE12E cmd='@sys.togglehidden')
+				item(title='show/hide files extension' image=icon.show_file_extensions cmd='@sys.toggleext')
+			}
+			
+			menu(type='file|dir|back.dir' mode=single title='Toggle Attributes')
+			{
+				var { atrr = io.attributes(sel.path) }
+				item(title='Hidden' checked=@io.attribute.hidden(atrr)
+					cmd args='/c ATTRIB @if(io.attribute.hidden(atrr),"-","+")H "@sel.path"' window=hidden)
+				
+				item(title='System' checked=@io.attribute.system(atrr)
+					cmd args='/c ATTRIB @if(io.attribute.system(atrr),"-","+")S "@sel.path"' window=hidden)
+					
+				item(title='Read-Only' checked=@io.attribute.readonly(atrr)
+					cmd args='/c ATTRIB @if(io.attribute.readonly(atrr),"-","+")R "@sel.path"' window=hidden)
+					
+				item(title='Archive' checked=@io.attribute.archive(atrr)
+					cmd args='/c ATTRIB @if(io.attribute.archive(atrr),"-","+")A "@sel.path"' window=hidden)
+				separator
+				item(title="CREATED" keys=io.dt.created(sel.path, 'y/m/d') cmd=@io.dt.created(sel.path,2000,1,1))
+				item(title="MODIFIED" keys=io.dt.modified(sel.path, 'y/m/d') cmd=@io.dt.modified(sel.path,2000,1,1))
+				item(title="ACCESSED" keys=io.dt.accessed(sel.path, 'y/m/d') cmd=@io.dt.accessed(sel.path,2000,1,1))
+			}
+
+			menu(mode=single type='file' find='.dll|.ocx' separator=before title='Register Server' image=\uea86)
+			{
+				item(title='Register' admin cmd='regsvr32.exe' args='@sel.path.quote')
+				item(title='Unregister' admin cmd='regsvr32.exe' args='/u @sel.path.quote')
+			}
+
+			menu(mode=single type='back')
+			{
+				menu(separator=before title='New Folder' image=\uE0E5)
+				{
+					item(title='DateTime' cmd=@io.dir.create(sys.datetime("ymdHMSs")))
+					item(title='Guid' cmd=@io.dir.create(str.guid))
+				}
+				
+				menu(title='New File' image=\uE108)
+				{
+					var { dt = sys.datetime("ymdHMSs")}
+					item(title='TXT' cmd=@io.file.create('@(dt).txt', 'Hello World!'))
+					item(title='C++' cmd=@io.file.create('@(dt).cpp', ''))
+					item(title='XML' cmd=@io.file.create('@(dt).xml', '<root>Hello World!</root>'))
+					item(title='JSON' cmd=@io.file.create('@(dt).json', '[]'))
+					item(title='HTML' cmd=@io.file.create('@(dt).html', "<html>\n\t<head>\n\t</head>\n\t<body>Hello World!\n\t</body>\n</html>"))					
+				}
+			}
+		}
+
+		menu(type='~taskbar' mode=multiple title='&Develop' sep=bottom image=\uE271)
+		{
+			menu(mode=single title='editors' image=\uE17A)
+			{
+				item(title='vscode' image=[\uE272, #22A7F2] cmd='code.exe' args='"@sel.path"')
+				separator
+				item(type='file' title='notepad3' image cmd='notepad3.exe' args='"@sel.path"')
+				item(type='file' mode=single title='Windows notepad' image cmd='@sys.bin\notepad.exe' args='"@sel.path"')
+			}
+
+			menu(mode=multiple title='dotnet' image=\uE143)
+			{
+				item(title='run' cmd-line='/K dotnet run' image=\uE149)
+				item(title='watch' cmd-line='/K dotnet watch')
+				item(title='clean' image=\uE0CE cmd-line='/K dotnet clean')
+				separator
+				item(title='build debug' cmd-line='/K dotnet build')
+				item(title='build release' cmd-line='/K dotnet build -c release /p:DebugType=None')
+
+				menu(mode=multiple sep=both title='publish' image=\ue11f)
+				{
+					var { publish='dotnet publish -r win-x64 -c release --output "@sel.parent\publish" /p:CopyOutputSymbolsToPublishDirectory=false' }
+					item(title='publish sinale file' separator=after cmd-line='/K @publish -p:PublishSingleFile=true --self-contained false')
+					item(title='framework-dependent deployment' cmd-line='/K @publish')
+					item(title='framework-dependent executable' cmd-line='/K @publish --self-contained false')
+					item(title='self-contained deployment' cmd-line='/K @publish --self-contained true')
+					item(title='single-file' cmd-line='/K @publish /p:PublishSingleFile=true /p:PublishTrimmed=false')
+					item(title='single-file-trimmed' cmd-line='/K @publish /p:PublishSingleFile=true /p:PublishTrimmed=true')
+				}
+				
+				item(title='ef migrations add InitialCreate' cmd-line='/K dotnet ef migrations add InitialCreate')
+				item(title='ef database update' cmd-line='/K dotnet ef database update')
+				separator
+				item(title='help' image=\uE136 cmd-line='/k dotnet -h')
+				item(title='version' cmd-line='/k dotnet --info')
+			}
+		}
+
+		// portable start menu for window 11
+		menu(where=@(sys.is11 && this.count == 0) type='taskbar' image=id.settings.icon)
+		{
+			item(title="OS build\t"+@sys.ver vis=label image=\uE1B8)
+			item(title="Nilesoft Shell\t"+@app.ver vis=label image=[\uE249, #0ee])
+			item(vis=static)
+			item(title=id.settings.title image=inherit cmd='ms-settings:')
+			item(title=id.taskbar_Settings.title image=inherit cmd='ms-settings:taskbar')
+			item(title=id.task_manager.title image=\uE159 cmd='taskmgr.exe')
+			item(title="Process Hacker" image cmd='D:\config\Programs\windows\process\ProcessHacker\ProcessHacker.exe')
+			item(title=id.run.title image='imageres.dll,-100' cmd='shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}')
+			item(title=id.file_explorer.title image=\uE0D0 cmd='explorer.exe')
+			item(vis=@key.shift() title=id.exit_explorer.title cmd=sys.restartExplorer)
+			item(vis=static)
+			menu(title=id.control_panel.title image='imageres.dll,-27' )
+			{
+				item(title='All Items' cmd='shell:::{21EC2020-3AEA-1069-A2DD-08002B30309D}')
+				item(title='Applications' cmd='shell:::{4234d49b-0245-4df3-b780-3893943456e1}')
+				item(title='All Tasks' cmd='shell:::{ED7BA470-8E54-465E-825C-99712043E01C}')
+			}
+			menu(title='Folders' image=\uE0E7)
+			{
+				item(title='Downloads' image=inherit cmd=@user.downloads)
+				item(title='Pictures' image=inherit cmd=@user.pictures)
+				item(title='Home' image=inherit cmd=@user.directory)
+				item(title='Windows' image=inherit cmd=@sys.directory)
+				item(title='Program files' image=inherit cmd=@sys.prog)
+			}			
+			item(vis=static)
+			menu(title='Power' image=\uE12F)
+			{
+				item(title='Sleep' image=\uE11C cmd='rundll32.exe' arg='powrprof.dll, SetSuspendState Sleep')
+				item(title='Hibernate' image=\uE126 cmd='shutdown' arg='/h')
+				item(title='Shut down' image=inherit cmd='shutdown' arg='/s')
+				item(title='Restart' image=\uE025 cmd='shutdown' arg='/r')
+			}
+			item(vis=static)
+			item(title='Apps' vis=label col)
+			menu(title="Terminal" sep=both image=\uE218)
+			{
+				item(title='Command Prompt@elevated' admin=@shift_pressed image cmd='cmd.exe' args='/K TITLE Command Prompt &ver& PUSHD "@sel.dir"')
+				item(title='Windows PowerShell@elevated' admin=@shift_pressed image command='powershell.exe' arguments='-noexit -command Set-Location -Path "@user.desktop\."')
+				item(title='@appx.name("WindowsTerminal")@elevated' admin=@shift_pressed image='@package.path("WindowsTerminal")\WindowsTerminal.exe' cmd='wt.exe' arg='-d "@sel.path\."')
+			}
+			item(title='Paint' image=\uE116 cmd='mspaint')
+			item(title='Edge' image cmd='@sys.prog32\Microsoft\Edge\Application\msedge.exe')
+			item(title='Calculator' image=\ue1e7 cmd='calc.exe')
+			item(title=@str.res('regedit.exe,-16') image cmd='regedit.exe')
+			item(title='Notepad' image='notepad.exe' cmd='notepad.exe')
+			item(title='Visual Studio Code' image=[\uE272, #22A7F2] cmd='code.exe')
+		}
+		menu(mode=multiple title='Goto' separator=both image=\uE14A)
+        {
+			menu(title='Folder' image=\uE1F4)
+            {
+				item(title='Windows' image=inherit cmd=@sys.dir)
+				item(title='System' image=inherit cmd=@sys.bin)
+				item(title='Program Files' image=inherit cmd=@sys.prog)
+				item(title='Program Files x86' image=inherit cmd=@sys.prog32)
+				item(title='ProgramData' image=inherit cmd=@sys.programdata)
+				item(title='Applications' image=inherit cmd='shell:appsfolder')
+				item(title='Users' image=inherit cmd=@sys.users)
+				separator
+				//item(title='@user.name@@@sys.name' vis=label)
+				item(title='Desktop' image=inherit cmd=@user.desktop)
+				item(title='Downloads' image=inherit cmd=@user.downloads)
+				item(title='Pictures' image=inherit cmd=@user.pictures)
+				item(title='Documents' image=inherit cmd=@user.documents)
+				item(title='Startmenu' image=inherit cmd=@user.startmenu)
+				item(title='Profile' image=inherit cmd=@user.dir)
+				item(title='AppData' image=inherit cmd=@user.appdata)
+				item(title='Temp' image=inherit cmd=@user.temp)
+            }
+            item(title=id.control_panel.title image=\uE0F3 cmd='shell:::{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}')
+            item(title='All Control Panel Items' image=\uE0F3 cmd='shell:::{ED7BA470-8E54-465E-825C-99712043E01C}')
+            item(title=id.run.title image=\uE14B cmd='shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}')
+            menu(title=id.settings.title separator=before image=id.settings.icon)
+            {
+                // https://docs.microsoft.com/en-us/windows/uwp/launch-resume/launch-settings-app
+                item(title='system' image=inherit cmd='ms-settings:')
+                item(title='about' image=inherit cmd='ms-settings:about')
+                item(title='your-info' image=inherit cmd='ms-settings:yourinfo')
+                item(title='system-info' image=inherit cmd-line='/K systeminfo')
+                item(title='search' cmd='search-ms:' image=inherit)
+                item(title='usb' image=inherit cmd='ms-settings:usb')
+                item(title='windows-update' image=inherit cmd='ms-settings:windowsupdate')
+                item(title='windows-defender' image=inherit cmd='ms-settings:windowsdefender')
+                menu(title='apps' image=inherit)
+                {
+					item(title='apps-features' image=inherit cmd='ms-settings:appsfeatures')
+					item(title='default-apps' image=inherit cmd='ms-settings:defaultapps')
+					item(title='optional-features' image=inherit cmd='ms-settings:optionalfeatures')
+					item(title='startup' image=inherit cmd='ms-settings:startup')
+				}
+                menu(title='personalization' image=inherit)
+                {
+					item(title='personalization' image=id.settings.icon cmd='ms-settings:personalization')
+					item(title='lockscreen' image=id.settings.icon cmd='ms-settings:lockscreen')
+					item(title='background' image=inherit cmd='ms-settings:personalization-background')
+					item(title='colors' image=inherit cmd='ms-settings:colors')
+					item(title='themes' image=inherit cmd='ms-settings:themes')
+					item(title='start' image=inherit cmd='ms-settings:personalization-start')
+					item(title='taskbar' image=inherit cmd='ms-settings:taskbar')
+				}
+				menu(title='network' image=inherit)
+                {
+					item(title='status' image=inherit cmd='ms-settings:network-status')
+					item(title='ethernet' image=inherit cmd='ms-settings:network-ethernet')
+					item(title='connections' image=inherit cmd='shell:::{7007ACC7-3202-11D1-AAD2-00805FC1270E}')
+				}
+            }
+        }
+	}
+}
