@@ -14,7 +14,7 @@ shell
 		{
 			name = "modern"
 			view = view.large
-			dark = auto
+			dark = false
 
 			background
 			{
