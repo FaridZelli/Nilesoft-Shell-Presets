@@ -1,2 +1,3 @@
-# Nilesoft-Shell-Presets
-Modern style presets for Nilesoft Shell (moudey/shell)
+# Nilesoft Shell Presets
+
+- Currently for: 1.8 Beta
