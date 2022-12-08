@@ -18,7 +18,7 @@ shell
 			background
 			{
 				color = #2A2A2A // or #FFF9F9F9 or [#F9F9F9, 100]
-				opacity = 65
+				opacity = 70
 
 				// auto | none = 0 | transparent = 1 | blur = 2 | acrylic = 3 | mica = 4 | tabbed = 5
 				// effect = 0
