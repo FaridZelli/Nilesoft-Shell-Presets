@@ -1,10 +1,11 @@
 # Nilesoft Shell Presets
    
 - [Nilesoft](https://nilesoft.org/)
-- Currently for: [1.8 Beta](https://github.com/FaridZelli/Nilesoft-Shell-Presets/raw/main/Shell/shell-beta-1-8.zip)
+- Currently for: [1.8 Beta (Link)](https://github.com/FaridZelli/Nilesoft-Shell-Presets/raw/main/Shell/shell-beta-1-8.zip)
    
 Extract Nilesoft Shell to `ProgramFiles\Nilesoft\Shell`   
-Rename `shell.shl.light-dark` to `shell.shl` and replace the file
+Download the latest presets from [releases](https://github.com/FaridZelli/Nilesoft-Shell-Presets/releases/latest)   
+Rename `shell.shl.light-dark` to `shell.shl` and replace the file in the directory
    
 ---
 - **Light**
