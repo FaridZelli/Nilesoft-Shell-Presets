@@ -10,9 +10,9 @@ Rename `shell.shl.light-dark` to `shell.shl` and replace the file in the directo
 ---
 - **Light**
 ---
-<img src="https://github.com/FaridZelli/Nilesoft-Shell-Presets/raw/main/Screenshots/Screenshot_Light.png" align="center">
+<img src="Screenshots/Screenshot_Light.png" align="center">
    
 ---
 - **Dark**
 ---
-<img src="https://github.com/FaridZelli/Nilesoft-Shell-Presets/raw/main/Screenshots/Screenshot_Dark.png" align="center">
+<img src="Screenshots/Screenshot_Dark.png" align="center">
